@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#añadir -x para examinar una ip: TTL, MAC (vendor...), ...
+
 trap SIGINT_handler INT
 
 SIGINT_handler(){
@@ -47,21 +49,38 @@ get_ip_range() {
 
 
 discover_ports() {
-    echo "-----Discovering ports for $1-----"
-    for port in $(seq 1 1024); do
-        timeout 1 bash -c "echo '' > /dev/tcp/$1/$port" &>/dev/null && echo "[+] Port $port open" &
+    start=$fromPort || start=0
+    end=$toPort || end=1024
+    echo "-----Discovering ($start:$end) ports for $1-----"
+    for port in $(seq $start $end); do
+        timeout 5 bash -c "echo '' > /dev/tcp/$1/$port" &>/dev/null && echo "[+] Port $port open" &
     done;
     echo "++++++++++++++++++++++++++++++++++"
 }
 
-while getopts ":hic:d:p:f:" option; do
+opt_string="r:hic:d:p:f:"
+while getopts $opt_string option; do
     case $option in
+        r)  IFS=',' read -ra range <<< $OPTARG
+            fromPort=${range[0]}
+            toPort=${range[1]}
+            ;;
+    esac
+done
+
+OPTIND=1
+
+while getopts $opt_string option; do
+    case $option in
+        #r) range=$OPTARG
+        #    ;;
         h)
-            echo -e "-i:\t\t\t list interfaces"
-            echo -e "-c <ip/mask>:\t\t calc subnet"
-            echo -e "-d <interface>:\t\t discover network"
-            echo -e "-p <ip>:\t\t discover ports in ip"
-            echo -e "-f <interface>:\t\t discover hosts and ports"
+            echo -e "-i\t\t\t list interfaces"
+            echo -e "-r <0:1024>\t\t set port range scan"
+            echo -e "-c <ip/mask>\t\t calc subnet"
+            echo -e "-d <interface>\t\t discover network"
+            echo -e "-p <ip>\t\t discover ports in ip"
+            echo -e "-f <interface>\t\t discover hosts and ports"
             exit;;
         i) # display interfaces
             echo $interfaces
