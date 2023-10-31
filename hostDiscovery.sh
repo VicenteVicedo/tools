@@ -1,6 +1,7 @@
 #!/bin/bash
 
 #añadir -x para examinar una ip: TTL, MAC (vendor...), ...
+#cabeceras de servicios con nc
 
 trap SIGINT_handler INT
 
